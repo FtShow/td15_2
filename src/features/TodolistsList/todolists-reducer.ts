@@ -86,6 +86,7 @@ export const addTodolistTC = (title: string) => {
                 dispatch(addTodolistAC(res.data.data.item))
                 dispatch(setLoading('succeeded'))
             })
+
     }
 }
 export const changeTodolistTitleTC = (id: string, title: string) => {
