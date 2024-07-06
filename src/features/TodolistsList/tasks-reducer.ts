@@ -9,6 +9,7 @@ import {Dispatch} from 'redux'
 import {AppRootStateType} from '../../app/store'
 import {setErrorAC, setErrorType, setLoading, setLoadingType} from "../../app/ app-reducer";
 import {handleServerAppError, handleServerNetworkError} from "../../utils/error-utils";
+import axios from "axios";
 
 const initialState: TasksStateType = {}
 
@@ -60,6 +61,7 @@ enum STATUS_CODE {
     ERROR = 1,
     RECAPTCHA = 10,
 }
+
 export const fetchTasksTC = (todolistId: string) => (dispatch: Dispatch<ActionsType>) => {
     dispatch(setLoading('loading'))
     todolistsAPI.getTasks(todolistId)
@@ -96,7 +98,7 @@ export const addTaskTC = (title: string, todolistId: string) => (dispatch: Dispa
         })
 }
 export const updateTaskTC = (taskId: string, domainModel: UpdateDomainTaskModelType, todolistId: string) =>
-    (dispatch: Dispatch<ActionsType>, getState: () => AppRootStateType) => {
+    async (dispatch: Dispatch<ActionsType>, getState: () => AppRootStateType) => {
         const state = getState()
         const task = state.tasks[todolistId].find(t => t.id === taskId)
         if (!task) {
@@ -115,15 +117,29 @@ export const updateTaskTC = (taskId: string, domainModel: UpdateDomainTaskModelT
             ...domainModel
         }
         dispatch(setLoading('loading'))
-        todolistsAPI.updateTask(todolistId, taskId, apiModel)
-            .then(res => {
+        try {
+
+            const response = await todolistsAPI.updateTask(todolistId, taskId, apiModel)
+            if(response.data.resultCode === 0){
                 const action = updateTaskAC(taskId, domainModel, todolistId)
                 dispatch(action)
                 dispatch(setLoading('succeeded'))
-            })
-            .catch((e) => {
-                handleServerNetworkError(dispatch, e)
-            })
+            }
+            else {
+                handleServerAppError(dispatch, response.data)
+            }
+
+        } catch (error) {
+            if(axios.isAxiosError<ErrorType>(error)){
+                handleServerNetworkError(dispatch, error)
+            }
+            else {
+                const err = error as {message: string}
+                handleServerNetworkError(dispatch, err)
+            }
+
+
+        }
     }
 
 
@@ -149,3 +165,9 @@ type ActionsType =
     | ReturnType<typeof setTasksAC>
     | setLoadingType
     | setErrorType
+
+type ErrorType = {
+    message: string,
+    field: string,
+    code: number
+}
