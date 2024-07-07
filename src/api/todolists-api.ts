@@ -1,4 +1,5 @@
 import axios, { AxiosResponse } from 'axios'
+import {RequestStatusType} from "../app/ app-reducer";
 
 const instance = axios.create({
     baseURL: 'https://social-network.samuraijs.com/api/1.1/',
@@ -66,7 +67,11 @@ export enum TaskPriorities {
     Later = 4
 }
 
-export type TaskType = {
+export type TaskType = SemiTaskType & {
+    entityStatus: RequestStatusType,
+}
+
+export type SemiTaskType = {
     description: string
     title: string
     status: TaskStatuses
@@ -78,6 +83,7 @@ export type TaskType = {
     order: number
     addedDate: string
 }
+
 export type UpdateTaskModelType = {
     title: string
     description: string
