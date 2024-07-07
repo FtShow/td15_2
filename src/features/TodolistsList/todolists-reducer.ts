@@ -53,50 +53,47 @@ export const changeEntityStatusAC = (todoid: string, entityStatus: RequestStatus
 
 // thunks
 export const fetchTodolistsTC = () => {
-    return (dispatch: Dispatch<ActionsType>) => {
-        todolistsAPI.getTodolists()
-            .then((res) => {
-                dispatch(setTodolistsAC(res.data))
-                dispatch(setLoading('succeeded'))
-            })
-
+    return async (dispatch: Dispatch<ActionsType>) => {
+        const res = await todolistsAPI.getTodolists()
+        dispatch(setTodolistsAC(res.data))
+        dispatch(setLoading('succeeded'))
     }
 }
+
 export const removeTodolistTC = (todolistId: string) => {
-    return (dispatch: Dispatch<ActionsType>) => {
+    return async (dispatch: Dispatch<ActionsType>) => {
         dispatch(setLoading('loading'))
         dispatch(changeEntityStatusAC(todolistId, 'loading'))
-        todolistsAPI.deleteTodolist(todolistId)
-            .then((res) => {
-                dispatch(removeTodolistAC(todolistId))
-                dispatch(setLoading('succeeded'))
-            })
-            .catch((e: any) => {
-                dispatch(changeEntityStatusAC(todolistId, 'idle'))
-                dispatch(setLoading('failed'))
-                dispatch(setErrorAC(e.message))
-            })
+        try {
+            const res = await todolistsAPI.deleteTodolist(todolistId)
+            dispatch(removeTodolistAC(todolistId))
+            dispatch(setLoading('succeeded'))
+        } catch (e: any) {
+            dispatch(changeEntityStatusAC(todolistId, 'idle'))
+            dispatch(setLoading('failed'))
+            dispatch(setErrorAC(e.message))
+        }
     }
 }
 export const addTodolistTC = (title: string) => {
-    return (dispatch: Dispatch<ActionsType>) => {
+    return async (dispatch: Dispatch<ActionsType>) => {
         dispatch(setLoading('loading'))
-        todolistsAPI.createTodolist(title)
-            .then((res) => {
-                dispatch(addTodolistAC(res.data.data.item))
-                dispatch(setLoading('succeeded'))
-            })
-
+        const res = await todolistsAPI.createTodolist(title)
+        dispatch(addTodolistAC(res.data.data.item))
+        dispatch(setLoading('succeeded'))
     }
 }
 export const changeTodolistTitleTC = (id: string, title: string) => {
-    return (dispatch: Dispatch<ActionsType>) => {
+    return async (dispatch: Dispatch<ActionsType>) => {
         dispatch(setLoading('loading'))
-        todolistsAPI.updateTodolist(id, title)
-            .then((res) => {
-                dispatch(changeTodolistTitleAC(id, title))
-                dispatch(setLoading('succeeded'))
-            })
+        try {
+            const res = await todolistsAPI.updateTodolist(id, title)
+            dispatch(changeTodolistTitleAC(id, title))
+            dispatch(setLoading('succeeded'))
+        } finally {
+
+        }
+
     }
 }
 

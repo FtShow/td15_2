@@ -62,41 +62,40 @@ enum STATUS_CODE {
     RECAPTCHA = 10,
 }
 
-export const fetchTasksTC = (todolistId: string) => (dispatch: Dispatch<ActionsType>) => {
+export const fetchTasksTC = (todolistId: string) => async (dispatch: Dispatch<ActionsType>) => {
     dispatch(setLoading('loading'))
-    todolistsAPI.getTasks(todolistId)
-        .then((res) => {
-            const tasks = res.data.items
-            const action = setTasksAC(tasks, todolistId)
+    const res = await todolistsAPI.getTasks(todolistId)
+    const tasks = res.data.items
+    const action = setTasksAC(tasks, todolistId)
+    dispatch(action)
+    dispatch(setLoading('succeeded'))
+}
+
+export const removeTaskTC = (taskId: string, todolistId: string) => async (dispatch: Dispatch<ActionsType>) => {
+    const res = await todolistsAPI.deleteTask(todolistId, taskId)
+    const action = removeTaskAC(taskId, todolistId)
+    dispatch(action)
+    console.log('QWEQWEQWEQ')
+    dispatch(setLoading('succeeded'))
+}
+
+export const addTaskTC = (title: string, todolistId: string) => async (dispatch: Dispatch<ActionsType>) => {
+    dispatch(setLoading('loading'))
+    const res = await todolistsAPI.createTask(todolistId, title)
+    try {
+        if (res.data.resultCode === STATUS_CODE.SUCCESS) {
+            const task = res.data.data.item
+            const action = addTaskAC(task)
             dispatch(action)
             dispatch(setLoading('succeeded'))
-        })
+        } else {
+            handleServerAppError(dispatch, res.data)
+        }
+    } catch (e: any) {
+        handleServerNetworkError(dispatch, e)
+    }
 }
-export const removeTaskTC = (taskId: string, todolistId: string) => (dispatch: Dispatch<ActionsType>) => {
-    todolistsAPI.deleteTask(todolistId, taskId)
-        .then(res => {
-            const action = removeTaskAC(taskId, todolistId)
-            dispatch(action)
-            dispatch(setLoading('succeeded'))
-        })
-}
-export const addTaskTC = (title: string, todolistId: string) => (dispatch: Dispatch<ActionsType>) => {
-    dispatch(setLoading('loading'))
-    todolistsAPI.createTask(todolistId, title)
-        .then(res => {
-            if (res.data.resultCode === STATUS_CODE.SUCCESS) {
-                const task = res.data.data.item
-                const action = addTaskAC(task)
-                dispatch(action)
-                dispatch(setLoading('succeeded'))
-            } else {
-                handleServerAppError(dispatch, res.data)
-            }
-        })
-        .catch((e: any) => {
-            handleServerNetworkError(dispatch, e)
-        })
-}
+
 export const updateTaskTC = (taskId: string, domainModel: UpdateDomainTaskModelType, todolistId: string) =>
     async (dispatch: Dispatch<ActionsType>, getState: () => AppRootStateType) => {
         const state = getState()
@@ -118,27 +117,22 @@ export const updateTaskTC = (taskId: string, domainModel: UpdateDomainTaskModelT
         }
         dispatch(setLoading('loading'))
         try {
-
             const response = await todolistsAPI.updateTask(todolistId, taskId, apiModel)
-            if(response.data.resultCode === 0){
+            if (response.data.resultCode === 0) {
                 const action = updateTaskAC(taskId, domainModel, todolistId)
                 dispatch(action)
                 dispatch(setLoading('succeeded'))
-            }
-            else {
+            } else {
                 handleServerAppError(dispatch, response.data)
             }
 
         } catch (error) {
-            if(axios.isAxiosError<ErrorType>(error)){
+            if (axios.isAxiosError<ErrorType>(error)) {
                 handleServerNetworkError(dispatch, error)
-            }
-            else {
-                const err = error as {message: string}
+            } else {
+                const err = error as { message: string }
                 handleServerNetworkError(dispatch, err)
             }
-
-
         }
     }
 
